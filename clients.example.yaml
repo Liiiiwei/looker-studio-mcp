@@ -1,0 +1,17 @@
+# 複製成 clients.yaml 再填入真實帳戶 ID。所有 ID 請加引號。
+clients:
+  example:
+    name: 範例客戶
+    # Meta 廣告帳戶 ID，不含 act_ 前綴；必須已在 Windsor 連接
+    meta_account_id: "1234567890123456"
+    # Google Ads 客戶 ID，10 碼，有無連字號皆可
+    google_ads_account_id: "123-456-7890"
+    ga4:
+      account_id: "123456789"
+      property_id: "987654321"
+    sheets:
+      budget:
+        # 試算表網址 /d/ 與 /edit 之間那一段
+        spreadsheet_id: "1AbCdEfGhIjKlMnOpQrStUvWxYz"
+        # 工作表網址 gid= 後面的數字
+        worksheet_id: "0"

@@ -1,0 +1,9 @@
+templates:
+  ecommerce:
+    name: 電商成效報表
+    report_id: 10c6e47c-64d9-41fa-a5b2-cad7602627b0
+    sources:
+      ds8:   { type: meta_windsor }
+      ds25:  { type: google_ads }
+      ds0:   { type: ga4 }
+      ds119: { type: sheets, sheet: budget }

@@ -1,0 +1,9 @@
+# 客戶帳戶 ID，不進版控
+clients.yaml
+
+.venv/
+__pycache__/
+.pytest_cache/
+
+# superpowers 執行計畫的暫存工作區
+.superpowers/

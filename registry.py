@@ -87,3 +87,82 @@ def load_templates(path: str | Path) -> dict[str, Template]:
             sources=tuple(sources),
         )
     return templates
+
+
+@dataclass(frozen=True)
+class SheetRef:
+    spreadsheet_id: str | None
+    worksheet_id: str | None
+
+
+@dataclass(frozen=True)
+class Client:
+    key: str
+    name: str
+    meta_account_id: str | None
+    google_ads_account_id: str | None
+    ga4_account_id: str | None
+    ga4_property_id: str | None
+    sheets: dict[str, SheetRef]
+
+
+def _mapping(value, where: str) -> dict:
+    """選填區塊：沒填回傳空對照表，填了但不是對照表就報錯。"""
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise RegistryError(f"{where} 必須是對照表")
+    return value
+
+
+def load_clients(path: str | Path) -> dict[str, Client]:
+    hint = "；請複製 clients.example.yaml 為 clients.yaml 再填入帳戶 ID"
+    clients: dict[str, Client] = {}
+    for key, body in _load_yaml(path, "clients", hint).items():
+        key = str(key)
+        if not isinstance(body, dict):
+            raise RegistryError(f"客戶「{key}」的內容必須是對照表")
+        ga4 = _mapping(body.get("ga4"), f"客戶「{key}」的 ga4")
+        raw_sheets = _mapping(body.get("sheets"), f"客戶「{key}」的 sheets")
+
+        sheets = {}
+        for sheet_name, raw in raw_sheets.items():
+            ref = _mapping(raw, f"客戶「{key}」的 sheets.{sheet_name}")
+            sheets[str(sheet_name)] = SheetRef(
+                spreadsheet_id=_text(ref.get("spreadsheet_id")),
+                worksheet_id=_text(ref.get("worksheet_id")),
+            )
+
+        clients[key] = Client(
+            key=key,
+            name=_text(body.get("name")) or key,
+            meta_account_id=_text(body.get("meta_account_id")),
+            google_ads_account_id=_text(body.get("google_ads_account_id")),
+            ga4_account_id=_text(ga4.get("account_id")),
+            ga4_property_id=_text(ga4.get("property_id")),
+            sheets=sheets,
+        )
+    return clients
+
+
+def missing_fields(client: Client, template: Template) -> list[str]:
+    """列出客戶為了套用這份範本還缺的欄位路徑，依範本來源順序、不重複。"""
+    missing: list[str] = []
+
+    def need(value, label: str) -> None:
+        if not value and label not in missing:
+            missing.append(label)
+
+    for source in template.sources:
+        if source.type == "meta_windsor":
+            need(client.meta_account_id, "meta_account_id")
+        elif source.type == "google_ads":
+            need(client.google_ads_account_id, "google_ads_account_id")
+        elif source.type == "ga4":
+            need(client.ga4_account_id, "ga4.account_id")
+            need(client.ga4_property_id, "ga4.property_id")
+        else:
+            ref = client.sheets.get(source.sheet)
+            need(ref.spreadsheet_id if ref else None, f"sheets.{source.sheet}.spreadsheet_id")
+            need(ref.worksheet_id if ref else None, f"sheets.{source.sheet}.worksheet_id")
+    return missing

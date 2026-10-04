@@ -24,7 +24,7 @@ class BuildError(Exception):
 
 
 def _digits(value: str, label: str) -> str:
-    if not re.fullmatch(r"\d+", value):
+    if not re.fullmatch(r"[0-9]+", value):
         raise BuildError(f"{label} 必須是純數字，目前是「{value}」")
     return value
 
@@ -42,7 +42,7 @@ def _connection(source: Source, client: Client) -> tuple[list[tuple[str, str]], 
 
     if source.type == "google_ads":
         account = re.sub(r"[-\s]", "", client.google_ads_account_id)
-        if not re.fullmatch(r"\d{10}", account):
+        if not re.fullmatch(r"[0-9]{10}", account):
             raise BuildError(
                 f"google_ads_account_id 去掉連字號後必須是 10 碼數字，目前是「{client.google_ads_account_id}」"
             )
@@ -58,6 +58,11 @@ def _connection(source: Source, client: Client) -> tuple[list[tuple[str, str]], 
         ], f"{account}/{prop}"
 
     ref = client.sheets[source.sheet]
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", ref.spreadsheet_id):
+        raise BuildError(
+            f"sheets.{source.sheet}.spreadsheet_id 只能是試算表網址 /d/ 與 /edit 之間那一段，"
+            f"目前是「{ref.spreadsheet_id}」"
+        )
     worksheet = _digits(ref.worksheet_id, f"sheets.{source.sheet}.worksheet_id")
     return [
         ("connector", "googleSheets"),

@@ -139,3 +139,18 @@ def test_same_type_twice_gets_two_aliases():
 
     assert params["ds.ds1.accountId"] == "1234567890"
     assert params["ds.ds2.accountId"] == "1234567890"
+
+
+def test_spreadsheet_url_instead_of_id_is_rejected():
+    url = "https://docs.google.com/spreadsheets/d/1AbC/edit#gid=0"
+    client = make_client(sheets={"budget": SheetRef(url, "0")})
+    with pytest.raises(BuildError, match="sheets.budget.spreadsheet_id"):
+        build_report_url(client, TEMPLATE)
+
+
+def test_fullwidth_digits_are_rejected():
+    client = make_client(google_ads_account_id="１２３４５６７８９０", ga4_property_id="２２２")
+    with pytest.raises(BuildError) as error:
+        build_report_url(client, TEMPLATE)
+    assert "google_ads_account_id" in str(error.value)
+    assert "ga4.property_id" in str(error.value)

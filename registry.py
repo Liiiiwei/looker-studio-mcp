@@ -31,13 +31,33 @@ class Template:
     sources: tuple[Source, ...]
 
 
+class _UniqueKeyLoader(yaml.SafeLoader):
+    """重複的鍵直接報錯；預設行為是後者靜默覆蓋前者，複製貼上忘了改代號時會拿錯客戶的帳戶。"""
+
+    def construct_mapping(self, node, deep=False):
+        seen = set()
+        for key_node, _ in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            try:
+                duplicated = key in seen
+            except TypeError:
+                # 不可雜湊的鍵交給父類別報錯
+                continue
+            if duplicated:
+                raise yaml.constructor.ConstructorError(
+                    None, None, f"重複的鍵「{key}」", key_node.start_mark
+                )
+            seen.add(key)
+        return super().construct_mapping(node, deep)
+
+
 def _load_yaml(path: str | Path, top_key: str, hint: str = "") -> dict:
     """讀 YAML 並取出最上層的 top_key；缺檔、格式錯誤、內容為空都報錯。"""
     path = Path(path)
     if not path.exists():
         raise RegistryError(f"找不到設定檔：{path}{hint}")
     try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        data = yaml.load(path.read_text(encoding="utf-8"), Loader=_UniqueKeyLoader)
     except yaml.YAMLError as error:
         raise RegistryError(f"{path.name} 不是合法的 YAML：{error}") from error
     section = data.get(top_key) if isinstance(data, dict) else None

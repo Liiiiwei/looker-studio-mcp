@@ -209,3 +209,28 @@ def test_missing_fields_not_repeated_for_same_type():
     template = Template("t", "t", "rid", (Source("ds1", "google_ads"), Source("ds2", "google_ads")))
     client = Client("a", "a", None, None, None, None, {})
     assert missing_fields(client, template) == ["google_ads_account_id"]
+
+
+def test_duplicate_client_key_is_rejected(tmp_path):
+    text = (
+        "clients:\n"
+        "  happyhabit:\n"
+        "    meta_account_id: '111'\n"
+        "  happyhabit:\n"
+        "    meta_account_id: '222'\n"
+    )
+    with pytest.raises(RegistryError, match="重複的鍵「happyhabit」"):
+        load_clients(write(tmp_path, "clients.yaml", text))
+
+
+def test_duplicate_template_alias_is_rejected(tmp_path):
+    text = (
+        "templates:\n"
+        "  a:\n"
+        "    report_id: x\n"
+        "    sources:\n"
+        "      ds0: { type: ga4 }\n"
+        "      ds0: { type: google_ads }\n"
+    )
+    with pytest.raises(RegistryError, match="重複的鍵「ds0」"):
+        load_templates(write(tmp_path, "templates.yaml", text))

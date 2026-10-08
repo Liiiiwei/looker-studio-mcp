@@ -1,0 +1,8 @@
+[
+  {"op": "goto", "url": "https://datastudio.google.com/u/0/reporting/10c6e47c-64d9-41fa-a5b2-cad7602627b0/page/p_z29zbh017d"},
+  {"op": "mode", "name": "編輯"},
+  {"op": "select", "x": 500, "y": 350},
+  {"op": "set_select", "label": "行高", "option": "32px"},
+  {"op": "set_select", "label": "字型大小", "option": "28px"},
+  {"op": "mode", "name": "查看"}
+]
